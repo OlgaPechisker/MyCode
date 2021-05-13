@@ -1,0 +1,178 @@
+// Implements a dictionary's functionality
+
+#include <stdbool.h>
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <cs50.h>
+#include <stdint.h>
+#include <strings.h>
+#include <string.h>
+
+#include "dictionary.h"
+
+// Represents a node in a hash table
+typedef struct node
+{
+    char word[LENGTH + 1];
+    struct node *next;
+}
+node;
+
+//variable for counting words in dictionary 
+int COUNT_WORDS; 
+
+// Number of buckets in hash table
+const unsigned int N = 501;
+
+// Hash table
+node *table[N];
+
+
+// My functions 
+float check_hash(node *array[]); 
+node *insert(node *head_pointer, char *word);
+node *create(char *word); 
+
+// Returns true if word is in dictionary, else false
+bool check(const char *word)
+{
+    int hash_index = hash(word);
+    for (node *cursor = table[hash_index]; cursor != NULL; cursor = cursor->next)
+    {
+        int comp_result = strcasecmp(word, cursor->word);
+        if (comp_result == 0)
+        {
+            return true; 
+        }
+    }
+    return false;
+}
+
+// Hashes word to a number
+unsigned int hash(const char *word)
+{
+    // TODO
+    unsigned int sum = 0; 
+    for (int j = 0; word[j] != '\0'; j++)
+    {
+        sum += tolower(word[j]);
+    }
+    return sum % (N - 1); 
+}
+
+// Loads dictionary into memory, returning true if successful, else false
+bool load(const char *dictionary)
+{
+    FILE *input = fopen(dictionary, "r"); // open file for reading 
+    if (input == NULL)
+    {
+        printf("Could not open file.\n");
+        return false;
+    }
+    //const char word[LENGTH + 1];
+    char *word = malloc(LENGTH + 1);
+    if (word == NULL)
+    {
+        printf("No memory");
+        fclose(input);
+        return false; 
+    }
+    COUNT_WORDS = 0; 
+    while (fscanf(input, "%s", word) != EOF) //scan one word at a time into words[] array of characters/. 
+    {
+        //Taking array as input actually taking a pointer to a first location
+        word[45] = '\0';
+        unsigned int hash_index = hash(word); 
+        if (table[hash_index] == NULL) 
+        {
+            table[hash_index] = create(word); 
+        }
+        else
+        {
+            table[hash_index] = insert(table[hash_index], word); 
+        }
+        COUNT_WORDS++; 
+        
+    }
+    fclose(input); 
+    free(word); 
+    float filled = check_hash(table);
+    printf("%f", filled); 
+    return true;
+}
+
+
+
+//***Inserting to linked list function 
+node *insert(node *head_pointer, char *word)
+{
+    node *snake = malloc(sizeof(node)); 
+    if (snake == NULL)
+    {
+        printf("Out of memory");
+        return NULL;
+    }
+    strcpy(snake->word, word); 
+    snake->next = head_pointer; 
+    head_pointer = snake; 
+    return head_pointer; 
+}
+
+//***creating the linked list function***
+node *create(char *word)
+{
+
+    node *head_pointer = NULL;
+    node *snake = malloc(sizeof(node)); //allocate memory for the new node
+    if (snake !=  NULL) //check if there is enough memory
+    {
+        strcpy(snake->word, word); 
+        snake->next = NULL;
+        head_pointer = snake;
+    }
+    else
+    {
+        return NULL;
+    }
+    return head_pointer;
+
+}
+
+
+// Returns number of words in dictionary if loaded, else 0 if not yet loaded
+unsigned int size(void)
+{
+    int number = COUNT_WORDS; 
+    return number;
+}
+
+// Unloads dictionary from memory, returning true if successful, else false
+bool unload(void)
+{
+    for (int i = 0; i < N; i++)
+    {
+        while (table[i] != 0)
+        {
+            node *tmp = table[i];
+            table[i] = table[i]->next;
+            free(tmp); 
+        }
+    }
+    return true;
+    
+}
+
+float check_hash(node *array[])
+{
+    int count = 0; 
+    for (int i = 0; i < N; i++)
+    {
+        if (table[i] != NULL)
+        {
+            count++; 
+        }
+    }
+    float fill_index = count / (float)N; 
+    return fill_index; 
+}
